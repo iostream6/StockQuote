@@ -31,11 +31,11 @@ public class AlphaVantageQuoteService extends AbstractQuoteService {
     private static final String PRICE_CSV_URL_TEMPLATE = "https://www.alphavantage.co/query?function=%s&symbol=%s&apikey=%s&datatype=csv";
     private static final String UA = "User-Agent", ACCEPT_CHARSET = "Accept-Charset", UA_VALUE = "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36", METHOD = "GET";
     private static final String ACCEPT_CHARSET_VALUE = java.nio.charset.StandardCharsets.UTF_8.name();
-    private static final String API_ERROR_PREFIX = "{";
+    private static final String API_ERROR_PREFIX = "{", SERVICE_NAME = "AlphaVantage Quote Service";
 
     public AlphaVantageQuoteService() {
         SYMBOL_MAP = new HashMap<>();
-        // add mapping for instrument symbols which need special help to map to the Yahoo! Finance stock symbol
+        // add mapping for instrument symbols which need special help to map to the AlphaVantage stock symbol
         SYMBOL_MAP.put("AIR", "AIR.PA");         //
         //
         // LSE shares:: https://github.com/prediqtiv/alpha-vantage-cookbook/blob/master/symbol-lists.md#united-kindom
@@ -46,9 +46,7 @@ public class AlphaVantageQuoteService extends AbstractQuoteService {
         SYMBOL_MAP.put("ULVR", "ULVR.L");
         SYMBOL_MAP.put("HSBA", "HSBA.L");
 
-        // todo .. add more!
-        //make sure LOGGING is ON
-        debug = true;
+        // todo .. add more client to service space symbol mappings as appropriate!
     }
 
     @Override
@@ -142,4 +140,11 @@ public class AlphaVantageQuoteService extends AbstractQuoteService {
         }
         return null;
     }
+
+    @Override
+    public String getName() {
+        return SERVICE_NAME;
+    }
+
+
 }

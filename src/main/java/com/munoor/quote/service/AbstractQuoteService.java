@@ -74,4 +74,10 @@ public abstract class AbstractQuoteService {
      * @return null if an error occurs or else a list of DateQuotes
      */
     public abstract List<DateQuotes> getPriceQuotes(List<String> symbols, LocalDate startDate, LocalDate endDate, QuoteType type);
+    
+    /**
+     * Gets the name of the quote service.
+     * @return 
+     */
+    public abstract String getName();
 }
