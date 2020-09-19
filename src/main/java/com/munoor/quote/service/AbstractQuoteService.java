@@ -5,11 +5,14 @@ package com.munoor.quote.service;
 
 import com.munoor.quote.DateQuotes;
 import com.munoor.quote.Quote.QuoteType;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  *
@@ -19,7 +22,21 @@ public abstract class AbstractQuoteService {
 
     protected static Map<String, String> SYMBOL_MAP;
     protected static boolean debug;
+    protected static final Properties config;
 
+    static {
+        config = new Properties();
+        //get resource in static context
+        //https://mkyong.com/java/java-getresourceasstream-in-static-method/, https://mkyong.com/java/java-read-a-file-from-resources-folder/
+        try (InputStream is = AbstractQuoteService.class.getClassLoader().getResourceAsStream("config.properties")) {
+            if (is == null) {
+                System.out.println("Could not load application properties");
+            }
+            config.load(is);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
     /**
      * Maps user-space provided quote symbols to quote service-space symbols
      *
