@@ -43,15 +43,13 @@ public abstract class AbstractQuoteService {
      * @param symbols a list of user-space quote symbols
      * @return an array of quote service-space symbols
      */
-    protected static String[] mapSymbols(List<String> symbols) {
+    protected static List<String> mapSymbols(List<String> symbols) {
         List<String> mappedSymbols = new ArrayList<>();
         symbols.stream().forEach(s -> {
             final String symbol = SYMBOL_MAP.get(s);
             mappedSymbols.add(symbol == null ? s : symbol);
         });
-        String[] mappedSymbolArray = new String[mappedSymbols.size()];
-        mappedSymbols.toArray(mappedSymbolArray);
-        return mappedSymbolArray;
+        return mappedSymbols;
     }
 
     /**
@@ -71,9 +69,10 @@ public abstract class AbstractQuoteService {
      * @param startDate the start date
      * @param endDate the end date
      * @param type the quote type
-     * @return null if an error occurs or else a list of DateQuotes
+     * @param failed a list which will be populated with symbols for which quotes could not be successfully retrieved
+     * @return a list of DateQuotes or an empty list if no DateQuotes could be obtained
      */
-    public abstract List<DateQuotes> getPriceQuotes(List<String> symbols, LocalDate startDate, LocalDate endDate, QuoteType type);
+    public abstract List<DateQuotes> getPriceQuotes(List<String> symbols, LocalDate startDate, LocalDate endDate, QuoteType type, List<String> failed);
     
     /**
      * Gets the name of the quote service.

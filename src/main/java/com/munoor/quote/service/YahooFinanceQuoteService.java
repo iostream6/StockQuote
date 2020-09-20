@@ -28,7 +28,7 @@ import yahoofinance.histquotes.Interval;
 public class YahooFinanceQuoteService extends AbstractQuoteService {
 
     private static final String SERVICE_NAME = "Yahoo! Finance Quote Service";
-    
+
     public YahooFinanceQuoteService() {
         SYMBOL_MAP = new HashMap<>();
         // add mapping for instrument symbols which need special help to map to the Yahoo! Finance stock symbol
@@ -37,8 +37,13 @@ public class YahooFinanceQuoteService extends AbstractQuoteService {
     }
 
     @Override
-    public List<DateQuotes> getPriceQuotes(List<String> symbols, LocalDate startDate, LocalDate endDate, Quote.QuoteType type) {
-        final String[] mappedSymbols = mapSymbols(symbols);
+    public List<DateQuotes> getPriceQuotes(List<String> symbols, LocalDate startDate, LocalDate endDate, Quote.QuoteType type, final List<String> failed) {
+        final List<String> mappedSymbols = mapSymbols(symbols);
+        String[] mappedSymbolArray = new String[mappedSymbols.size()];
+        mappedSymbols.toArray(mappedSymbolArray);
+        
+        final List<DateQuotes> dateQuotes = new ArrayList<>();
+
         final Calendar from = Calendar.getInstance();
         from.set(startDate.getYear(), startDate.getMonthValue() - 1, startDate.getDayOfMonth());
         final Calendar to = Calendar.getInstance();
@@ -47,14 +52,14 @@ public class YahooFinanceQuoteService extends AbstractQuoteService {
         Interval interval = type.equals(Quote.QuoteType.EOD) ? Interval.DAILY : Interval.MONTHLY;
 
         try {
-            final Map<String, Stock> results = YahooFinance.get(mappedSymbols, from, to, interval);
+            final Map<String, Stock> results = YahooFinance.get(mappedSymbolArray, from, to, interval);
 
             if (results.keySet().size() != symbols.size()) {
                 System.out.println("****************  Could not retrieve data for certain symbols\n\n\n");
                 symbols.stream().filter(s -> results.keySet().contains(s) == false).forEach(ss -> {
                     System.out.println(String.format("||| -> %s \n", ss));
+                    failed.add(ss);
                 });
-                return null;
             }
             if (debug) {
                 results.keySet().stream().forEach(key -> {
@@ -72,9 +77,6 @@ public class YahooFinanceQuoteService extends AbstractQuoteService {
                     Logger.getLogger(YahooFinanceQuoteService.class.getName()).log(Level.SEVERE, null, ex);
                 }
             });
-
-            final List<DateQuotes> dateQuotes = new ArrayList<>();
-
             hq.stream().collect(Collectors.groupingBy(HistoricalQuote::getDate)).forEach((k, v) -> {
                 //k is a Calendar, v is a List of HistoricQuotes
                 final DateQuotes dq = new DateQuotes();
@@ -87,13 +89,11 @@ public class YahooFinanceQuoteService extends AbstractQuoteService {
 
             dateQuotes.sort(Comparator.comparing(DateQuotes::getDate));
 
-            return dateQuotes;
-
         } catch (IOException ex) {
             Logger.getLogger(YahooFinanceQuoteService.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        return null;
+        return dateQuotes;
     }
 
     @Override

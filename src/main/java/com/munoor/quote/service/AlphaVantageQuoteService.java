@@ -40,19 +40,28 @@ public class AlphaVantageQuoteService extends AbstractQuoteService {
         //
         // LSE shares:: https://github.com/prediqtiv/alpha-vantage-cookbook/blob/master/symbol-lists.md#united-kindom
         SYMBOL_MAP.put("BATS", "BATS.L");
+        SYMBOL_MAP.put("BRSC", "BRSC.L");
         SYMBOL_MAP.put("DGE", "DGE.L");
-        SYMBOL_MAP.put("LGEN", "LGEN.L");
-        SYMBOL_MAP.put("NG", "NG.L");
-        SYMBOL_MAP.put("ULVR", "ULVR.L");
+        SYMBOL_MAP.put("FGT", "FGT.L");
+        SYMBOL_MAP.put("GGRP", "GGRP.L");
         SYMBOL_MAP.put("HSBA", "HSBA.L");
+        SYMBOL_MAP.put("IMB", "IMB.L");
+        SYMBOL_MAP.put("LGEN", "LGEN.L");
+        SYMBOL_MAP.put("NG.", "NG.L");
+        SYMBOL_MAP.put("RDSB", "RDSB.L");
+        SYMBOL_MAP.put("SGE", "SGE.L");
+        SYMBOL_MAP.put("ULVR", "ULVR.L");
+        SYMBOL_MAP.put("WLDS", "WLDS.L");
+
+        SYMBOL_MAP.put("", ".L");
 
         // todo .. add more client to service space symbol mappings as appropriate!
     }
 
     @Override
-    public List<DateQuotes> getPriceQuotes(List<String> symbols, LocalDate startDate, LocalDate endDate, QuoteType type) {
-        final String[] mappedSymbols = mapSymbols(symbols);
-
+    public List<DateQuotes> getPriceQuotes(List<String> symbols, LocalDate startDate, LocalDate endDate, QuoteType type, final List<String> failed) {
+        final List<String> mappedSymbols = mapSymbols(symbols);
+        final List<DateQuotes> dateQuotes = new ArrayList<>();
         switch (type) {
             case EOD:
                 break;
@@ -72,6 +81,11 @@ public class AlphaVantageQuoteService extends AbstractQuoteService {
 
         for (String symbol : mappedSymbols) {
             try {
+                //API is limited to 5 reqs per minute, in theory. So 12secs between requests is required. We use a random range between 15 to 30 secs
+                final long delay = (long) ((Math.random() * 15000) + 15000);
+                System.out.println(String.format("Processing  ::: '%s'", symbol));
+                Thread.sleep(delay);
+
                 final String requestURL = String.format(PRICE_CSV_URL_TEMPLATE, function, symbol, config.getProperty("alphavantage.apikey")); // Another option is to use RestTemplates from Spring   
                 URL myurl = new URL(requestURL);
                 con = (HttpURLConnection) myurl.openConnection();
@@ -84,8 +98,10 @@ public class AlphaVantageQuoteService extends AbstractQuoteService {
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
                         final String firstLine = reader.readLine().trim();
                         if (firstLine.equals(API_ERROR_PREFIX)) {
-                            hasError = true;
-                            break;
+                            //hasError = true;
+                            //break;
+                            System.out.println(String.format("Error downloading data for symbol::: '%s'", symbol));
+                            failed.add(symbol);
                         } else {
                             String line;
                             //Scanner sc = null;
@@ -126,7 +142,6 @@ public class AlphaVantageQuoteService extends AbstractQuoteService {
             }
         }
         if (hasError == false) {
-            final List<DateQuotes> dateQuotes = new ArrayList<>();
             records.stream().collect(Collectors.groupingBy(DateQuote::getDate)).forEach((k, v) -> {
                 final DateQuotes dq = new DateQuotes();
                 final List<Quote> oneDateQuotes = v.stream().map(h -> new Quote(h.getSymbol(), h.getValue())).collect(Collectors.toList());
@@ -136,15 +151,14 @@ public class AlphaVantageQuoteService extends AbstractQuoteService {
                 dateQuotes.add(dq);
             });
             dateQuotes.sort(Comparator.comparing(DateQuotes::getDate));
-            return dateQuotes;
+
         }
-        return null;
+        return dateQuotes;
     }
 
     @Override
     public String getName() {
         return SERVICE_NAME;
     }
-
 
 }
